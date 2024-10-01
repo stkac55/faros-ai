@@ -1,0 +1,119 @@
+# Default values for unleash.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+baseUriPath: "/unleash"
+
+global:
+  faros:
+    nodeJs:
+      GCLoggingEnabled: false
+  postgresql:
+    service:
+      ports:
+        postgresql: "5432"
+
+replicaCount: 1
+
+image:
+  repository: farosai/unleash
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "2ce81df44d2573aaf27b67a40994d41b28b3a228"
+
+imagePullSecrets:
+- name: dockerhub
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 4242
+  targetPort: 4242
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+  - host: unleash.local
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+  tls: []
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+dbName: &dbName unleash-db
+unleashDb:
+  enabled: true # When set to false, values for externalDb are used and must be set
+  nameOverride: *dbName
+  image:
+    tag: "14.7.0" # Postgres DB version
+  auth:
+    enablePostgresUser: true   # Creates "postgres" admin user
+    postgresPassword: admin
+    username: unleash
+    password: unleash
+    database: unleashdb
+  primary:
+    podSecurityContext:
+      enabled: false
+    containerSecurityContext:
+      enabled: false
+  volumePermissions:
+    enabled: true
+
+externalDb:
+  useSSL: "true"
+  verifySSL: "false"
+  host:
+  port: 5432
+  username:
+  password:
+  database:
+  # If DB user and the logical DB already exist (parameters above),
+  # superusername and superuserpassword should be the same as username and password
+  superusername:
+  superuserpassword:

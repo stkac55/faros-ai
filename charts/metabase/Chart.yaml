@@ -1,0 +1,17 @@
+apiVersion: v2
+appVersion: aion-v48.10.be77948
+dependencies:
+- alias: metabaseDb
+  condition: metabaseDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+- alias: metricsDb
+  condition: metricsDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros Metabase service
+name: metabase
+type: application
+version: 1.0.7

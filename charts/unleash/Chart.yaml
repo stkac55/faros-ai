@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 2ce81df
+dependencies:
+- alias: unleashDb
+  condition: unleashDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros Unleash service
+name: unleash
+type: application
+version: 1.0.7

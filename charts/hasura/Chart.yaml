@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 7f7c640
+dependencies:
+- alias: hasuraDb
+  condition: hasuraDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros Hasura service
+name: hasura
+type: application
+version: 1.0.7

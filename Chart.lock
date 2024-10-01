@@ -1,0 +1,36 @@
+dependencies:
+- name: aion
+  repository: ""
+  version: 1.0.7
+- name: aionapi
+  repository: ""
+  version: 1.0.7
+- name: aionmetabase
+  repository: ""
+  version: 1.0.7
+- name: aionworker
+  repository: ""
+  version: 1.0.7
+- name: alastor
+  repository: ""
+  version: 1.0.7
+- name: clio
+  repository: ""
+  version: 1.0.7
+- name: hasura
+  repository: ""
+  version: 1.0.7
+- name: hermes
+  repository: ""
+  version: 1.0.7
+- name: metabase
+  repository: ""
+  version: 1.0.7
+- name: poseidon
+  repository: ""
+  version: 1.0.7
+- name: unleash
+  repository: ""
+  version: 1.0.7
+digest: sha256:7d0be8577799fff4c454a6f7e0d0b1e9598b46872cf8f31947f036cdcb1c64cf
+generated: "2024-09-20T20:37:57.519703217Z"

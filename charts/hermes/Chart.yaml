@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: e775bf8
+dependencies:
+- alias: hermesDb
+  condition: hermesDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros Hermes service
+name: hermes
+type: application
+version: 1.0.7

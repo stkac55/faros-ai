@@ -1,0 +1,250 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "faros-ai.fullname" . -}}
+{{- $internalApiDomainName := printf "%s-controller.%s.svc" .Values.global.ingress.nginx.deploymentName .Values.global.ingress.nginx.namespace }}
+{{- $pathType := "Prefix" }}
+{{- $pathSuffix := "" }}
+{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "faros-ai.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+  {{- if eq $.Values.ingress.className "alb" }}
+    # Note ":" is ommited in assignment to change value of the existing variable
+    {{- $internalApiDomainName = $.Values.global.ingress.alb.domainName }}
+    # For ALB to preserve rules priority order as they are listed here, need to have pathType:ImplementationSpecific
+    {{- $pathType = "ImplementationSpecific" }}
+    # For ALB ingres, when pathType is ImplementationSpecific need to have "*" added, to match by prefix
+    {{- $pathSuffix = "*" }}
+    alb.ingress.kubernetes.io/group.name: "{{ $.Values.global.ingress.alb.groupName }}"
+    alb.ingress.kubernetes.io/load-balancer-name: "{{ $.Values.global.ingress.alb.groupName }}"
+    alb.ingress.kubernetes.io/listen-ports: {{ printf "[{\"%s\": %s}]" $.Values.global.ingress.scheme $.Values.global.ingress.alb.port | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ $internalApiDomainName }}
+  {{- end }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- $appDomain := (split ":" (urlParse .Values.global.faros.appUri).host)._0 }}
+    - host: {{ required "global.faros.appUri value is empty or not defined" $appDomain }}
+      http:
+        paths:
+          - path: "/" #TODO - this would catch all when appDomain is the same as apiDomain - throw an error if they are the same
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ template "alastor.fullname" .Subcharts.alastor }}
+                port:
+                  name: http
+    {{- $apiDomain := (split ":" (urlParse .Values.global.faros.apiUri).host)._0 }}
+    - host: {{ required "global.faros.apiUri value is empty or not defined" $apiDomain }}
+      http:
+        paths:
+        {{- if .Values.aionv2.enabled }}
+          - path: "/reports/metabase{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ template "aionmetabase.fullname" .Subcharts.aionmetabase }}
+                port:
+                  name: http
+        {{- $aionapiFullName := include "aionapi.fullname" .Subcharts.aionapi }}
+        {{- range list "/reports/docs" "/reports/pipelines" "/reports/releases" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $aionapiFullName }}
+                port:
+                  name: http
+        {{- end }}
+        {{- end }}
+        {{- $aionFullName := include "aion.fullname" .Subcharts.aion }}
+        {{- range list "/aion" "/reports" "/preferences" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $aionFullName }}
+                port:
+                  name: http
+        {{- end }}
+        {{- $hermesFullName := include "hermes.fullname" .Subcharts.hermes }}
+        {{- if eq .Values.ingress.className "nginx" }}
+          - path: '/graphs/[\-\w]+/events'
+        {{- else if eq .Values.ingress.className "alb" }}
+          - path: '/graphs/*/events'
+        {{- end }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $hermesFullName }}
+                port:
+                  name: http
+          - path: "/webhooks{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $hermesFullName }}
+                port:
+                  name: http
+        {{- $clioFullName := include "clio.fullname" .Subcharts.clio }}
+        {{- range list "/docs" "/graphs" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $clioFullName }}
+                port:
+                  name: http
+        {{- end }}
+        {{- $poseidonFullName := include "poseidon.fullname" .Subcharts.poseidon }}
+        {{- range list "/apps" "/accounts" "/executables" "/keys" "/schedules" "/secrets" "/tenants" "/users" "/version" "/queries" "/geocoding" "/roles" "/proxy" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $poseidonFullName }}
+                port:
+                  name: http
+        {{- end }}
+          - path: {{ .Values.global.poseidon.oasPath | quote }}
+            pathType: ImplementationSpecific # When pathType is Exact/Prefix helm gives warning "path /oas/oas.yaml cannot be used with pathType Exact" because "." is not escaped
+            backend:
+              service:
+                name: {{ $poseidonFullName }}
+                port:
+                  name: http
+          - path: "/unleash{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ template "unleash.fullname" .Subcharts.unleash }}
+                port:
+                  name: http
+          - path: "/metabase{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ template "metabase.fullname" .Subcharts.metabase }}
+                port:
+                  name: http
+    - host: "{{ $internalApiDomainName }}"
+      http:
+        paths:
+        {{- if .Values.aionv2.enabled }}
+          - path: "/reports/metabase{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ template "aionmetabase.fullname" .Subcharts.aionmetabase }}
+                port:
+                  name: http
+        {{- $aionapiFullName := include "aionapi.fullname" .Subcharts.aionapi }}
+        {{- range list "/reports/docs" "/reports/pipelines" "/reports/releases" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $aionapiFullName }}
+                port:
+                  name: http
+        {{- end }}
+        {{- end }}
+        {{- $aionFullName := include "aion.fullname" .Subcharts.aion }}
+        {{- range list "/aion" "/reports" "/preferences" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $aionFullName }}
+                port:
+                  name: http
+        {{- end }}
+        {{- $hermesFullName := include "hermes.fullname" .Subcharts.hermes }}
+        {{- if eq .Values.ingress.className "nginx" }}
+          - path: '/graphs/[\-\w]+/events'
+        {{- else if eq .Values.ingress.className "alb" }}
+          - path: '/graphs/*/events'
+        {{- end }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ $hermesFullName }}
+                port:
+                  name: http
+          - path: "/webhooks{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $hermesFullName }}
+                port:
+                  name: http
+        {{- $clioFullName := include "clio.fullname" .Subcharts.clio }}
+        {{- range list "/docs" "/graphs" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $clioFullName }}
+                port:
+                  name: http
+        {{- end }}
+        {{- $poseidonFullName := include "poseidon.fullname" .Subcharts.poseidon }}
+        {{- range list "/apps" "/accounts" "/executables" "/keys" "/schedules" "/secrets" "/tenants" "/users" "/version" "/queries" "/geocoding" "/roles" "/proxy" }}
+          - path: {{ printf "%s%s" . $pathSuffix | quote }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $poseidonFullName }}
+                port:
+                  name: http
+        {{- end }}
+          - path: {{ .Values.global.poseidon.oasPath | quote }}
+            pathType: ImplementationSpecific # When pathType is Exact/Prefix helm gives warning "path /oas/oas.yaml cannot be used with pathType Exact" because "." is not escaped
+            backend:
+              service:
+                name: {{ $poseidonFullName }}
+                port:
+                  name: http
+          - path: "/unleash{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ template "unleash.fullname" .Subcharts.unleash }}
+                port:
+                  name: http
+          - path: "/metabase{{ $pathSuffix }}"
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ template "metabase.fullname" .Subcharts.metabase }}
+                port:
+                  name: http
+{{- end }}

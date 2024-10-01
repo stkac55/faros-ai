@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "hermes.fullname" . }}
+  labels:
+    {{- include "hermes.labels" . | nindent 4 }}
+data:
+  HERMES_PORT: {{ .Values.service.targetPort | quote }}
+  HERMES_WORKER_HANDLER_VERSION: "NOT_SET"
+  AWS_REGION: "NOT_SET"
+  FAROS_NODE_OPTIONS: {{ include "hermes.farosNodeOptions" . | quote }}

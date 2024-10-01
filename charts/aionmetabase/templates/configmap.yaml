@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aionmetabase.fullname" . }}
+  labels:
+    {{- include "aionmetabase.labels" . | nindent 4 }}
+data:
+  {{- $farosApiUri := .Values.global.faros.apiUri }}
+  METABASE_URL: "http://{{ include "aionmetabase.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}{{ .Values.metabaseSitePath }}"
+
+  METABASE_EXTERNAL_URL: "{{ $farosApiUri }}{{ .Values.metabaseSitePath }}"
+  MAX_SESSION_AGE: "4320"
+  MB_ANON_TRACKING_ENABLED: "false"
+  MB_APPLICATION_COLORS: "{\"accent0\":\"#023D67\",\"accent1\":\"#15B1D7\",\"accent10\":\"#AE36CF\",\"accent11\":\"#6A24B0\",\"accent12\":\"#BC91E7\",\"accent13\":\"#22166A\",\"accent14\":\"#9BA9B0\",\"accent15\":\"#03749C\",\"accent16\":\"#21DFD4\",\"accent17\":\"#D4CA75\",\"accent18\":\"#C2934C\",\"accent19\":\"#FF0088\",\"accent2\":\"#E9560D\",\"accent20\":\"#760C62\",\"accent21\":\"#0B05E1\",\"accent22\":\"#413F96\",\"accent23\":\"#000000\",\"accent3\":\"#FECF05\",\"accent4\":\"#105E1D\",\"accent5\":\"#541404\",\"accent6\":\"#B2550E\",\"accent7\":\"#FFC199\",\"accent8\":\"#F46A83\",\"accent9\":\"#C82B5B\",\"admin-navbar\":\"#023D67\",\"bg-black\":\"#001C2D\",\"bg-dark\":\"#023D67\",\"bg-error\":\"#FFC9D2\",\"bg-light\":\"#F2F3F7\",\"bg-medium\":\"#E5E5E9\",\"bg-night\":\"#001C2D\",\"bg-white\":\"#FFFFFF\",\"bg-yellow\":\"#FFE9B9\",\"black\":\"#001C2D\",\"border\":\"#DADFF1\",\"brand\":\"#023D67\",\"danger\":\"#CA0024\",\"error\":\"#CA0024\",\"filter\":\"#15B1D7\",\"success\":\"#89C163\",\"summarize\":\"#E9560D\",\"text-dark\":\"#072E45\",\"text-light\":\"#516B7B\",\"text-medium\":\"#3E4661\",\"text-white\":\"#FFFFFF\",\"warning\":\"#E9560D\",\"white\":\"#FFFFFF\"}"
+  MB_APPLICATION_FONT: "Lato"
+  MB_APPLICATION_NAME: "Faros AI"
+  MB_AUDIT_MAX_RETENTION_DAYS: "30"
+  MB_CHECK_FOR_UPDATES: "false"
+  MB_COLORIZE_LOGS: "false"
+  MB_EMOJI_IN_LOGS: "false"
+  MB_ENABLE_EMBEDDING: "true"
+  MB_EMBEDDING_APP_ORIGIN: "{{ .Values.global.faros.appUri }}"
+  MB_ENABLE_XRAYS: "false"
+  MB_HUMANIZATION_STRATEGY: "simple"
+  MB_JETTY_PORT: {{ .Values.jettyPort | quote }}
+  MB_LOADING_MESSAGE: "Loading..."
+  MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE: "false"
+  MB_SITE_URL: "{{ $farosApiUri }}{{ .Values.metabaseSitePath }}/"
+  MB_JWT_ENABLED: "true"
+  MB_JWT_GROUP_SYNC: "true"
+  MB_JWT_IDENTITY_PROVIDER_URI: "{{ $farosApiUri }}/api/auth/metabase"
+  MB_ENABLE_QUERY_CACHING: {{ .Values.cache.enabled | quote }}
+  MB_QUERY_CACHING_MIN_TTL: {{ .Values.cache.minDuration | quote }}
+  MB_QUERY_CACHING_MAX_TTL: {{ .Values.cache.maxDuration | quote }}
+  MB_QUERY_CACHING_TTL_RATIO: {{ .Values.cache.ttlMultiplier | quote }}
+  JAVA_OPTS: {{ .Values.javaOpts | quote }}

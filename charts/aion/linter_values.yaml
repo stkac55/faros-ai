@@ -1,0 +1,20 @@
+global:
+  faros:
+    environment: "NOT_DEFINED"
+    apiUri: "http://NOT_DEFINED"
+    appUri: "http://NOT_DEFINED"
+    staticTenantID: "NOT_DEFINED"
+  alastor:
+    nextAuthProviders: "NOT_DEFINED"
+    nextPublicFarosStaticLicense: "NOT_DEFINED"
+  poseidon:
+    googleMapsAPIKey: "NOT_DEFINED"
+    vaultToken: "NOT_DEFINED"
+  metabase:
+    controlUser: NOT_DEFINED
+  datadog:
+    enabled: false
+    agent:
+      port: 8126
+    statsd:
+      port: 8125
