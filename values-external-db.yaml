@@ -1,0 +1,11 @@
+airbyte:
+  postgresql:
+    enabled: false
+global:
+  database:
+    type: "external"
+    host: ""
+    user: ""
+    password: ""
+    database: ""
+    port: ""

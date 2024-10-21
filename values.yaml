@@ -1,0 +1,175 @@
+# When using private registry, modify repository value for each image
+
+global:
+  # -- Service Account name override
+  serviceAccountName: &service-account-name "airbyte-admin"
+  # -- Deployment mode, whether or not render the default env vars and volumes in deployment spec
+  deploymentMode: "oss"
+  # -- Edition; "community" or "pro"
+  edition: "community"
+  env_vars: {}
+  # -- Database configuration
+  database:
+    # For external database configuration, see values-external-db.yaml
+    type: "internal"
+  storage:
+    type: minio
+  # For S3 storage, set the following values
+  #   type: "S3"
+  #   bucket:
+  #     log: "bucket_name"
+  #     state: "bucket_name"
+  #     workloadOutput: "bucket_name"
+  #   s3:
+  #     authenticationType: "instanceProfile"
+  #     region: ""
+
+  # Jobs resource requests and limits, see http://kubernetes.io/docs/user-guide/compute-resources/
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube.
+  jobs:
+    resources:
+      ## Example:
+      ## requests:
+      ##    memory: 256Mi
+      ##    cpu: 250m
+      # -- Job resource requests
+      requests: {}
+      ## Example:
+      ## limits:
+      ##    cpu: 200m
+      ##    memory: 1Gi
+      # -- Job resource limits
+      limits: {}
+
+    kube:
+      ## JOB_KUBE_ANNOTATIONS
+      # pod annotations of the sync job and the default pod annotations fallback for others jobs
+      # -- key/value annotations applied to kube jobs
+      annotations: {}
+
+      ## JOB_KUBE_LABELS
+      ## pod labels of the sync job and the default pod labels fallback for others jobs
+      # -- key/value labels applied to kube jobs
+      labels: {}
+
+      ## JOB_KUBE_NODE_SELECTORS
+      ## pod node selector of the sync job and the default pod node selector fallback for others jobs
+      # -- Node labels for pod assignment
+      nodeSelector: {}
+
+      ## JOB_KUBE_TOLERATIONS
+      # -- Node tolerations for pod assignment
+      #  Any boolean values should be quoted to ensure the value is passed through as a string.
+      tolerations: []
+
+      ## JOB_KUBE_MAIN_CONTAINER_IMAGE_PULL_SECRET
+      # -- image pull secret to use for job pod
+      main_container_image_pull_secret: ""
+
+      images:
+        ## JOB_KUBE_BUSYBOX_IMAGE
+        ## busybox image used by the job pod
+        ##   jobs.kube.images.busybox [string] busybox image used by the job pod
+        busybox: "busybox:1.35"
+        ## JOB_KUBE_SOCAT_IMAGE
+        ## socat image used by the job pod
+        ##   jobs.kube.images.socat [string] socat image used by the job pod
+        socat: "alpine/socat:1.7.4.4-r0"
+        ## JOB_KUBE_CURL_IMAGE
+        ## curl image used by the job pod
+        ##   jobs.kube.images.curl [string] curl image used by the job pod
+        curl: "curlimages/curl:7.87.0"
+
+airbyte:
+  # -- String to partially override airbyte.fullname template with a string (will prepend the release name)
+  nameOverride: ""
+  # -- String to fully override airbyte.fullname template with a string
+  fullnameOverride: ""
+
+  # Pods Service Account, see https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  serviceAccount:
+    # -- Specifies whether a ServiceAccount should be created
+    create: true
+    # -- Annotations for service account. Evaluated as a template. Only used if `create` is `true`.
+    annotations: {}
+    # -- Name of the service account to use. If not set and create is true, a name is generated using the fullname template.
+    name: *service-account-name
+  airbyte-api-server:
+    enabled: true
+    image:
+      repository: airbyte/airbyte-api-server
+  airbyte-bootloader:
+    image:
+      repository: airbyte/bootloader
+  connector-builder-server:
+    enabled: false
+    image:
+      repository: airbyte/connector-builder-server
+  cron:
+    image:
+      repository: airbyte/cron
+  keycloak:
+    enabled: false
+  keycloak-setup:
+    enabled: false
+  metrics:
+    # Metrics collector is disabled by default.
+    enabled: false
+    image:
+      repository: airbyte/metrics-reporter
+  minio:
+    enabled: true
+    image:
+      # -- Minio image used by Minio helm chart
+      repository: minio/minio
+      # -- Minio tag image
+      tag: RELEASE.2023-11-20T22-40-07Z
+  pod-sweeper:
+    image:
+      repository: bitnami/kubectl
+  postgresql:
+    # When enabled, a postgres DB instances is created on kubernetes cluster
+    # When disabled, see example in values-external-db.yaml for how to configure external DB
+    enabled: true
+  server:
+    log:
+      level: DEBUG
+    image:
+      repository: airbyte/server
+  temporal:
+    enabled: true
+    image:
+      repository: temporalio/auto-setup
+    env_vars:
+      LOG_LEVEL: info
+    # Faros fix for databases with TLS enforced, self signed cert not verified
+    extraEnv:
+      - name: POSTGRES_TLS_ENABLED
+        value: "true"
+      - name: POSTGRES_TLS_DISABLE_HOST_VERIFICATION
+        value: "true"
+      - name: SQL_TLS_ENABLED
+        value: "true"
+      - name: SQL_TLS_DISABLE_HOST_VERIFICATION
+        value: "true"
+  webapp:
+    log:
+      level: DEBUG
+    image:
+      repository: airbyte/webapp
+    env_vars:
+      # Remove this variable if connector-builder-server is enabled
+      CONNECTOR_BUILDER_API_HOST: "localhost"
+  worker:
+    image:
+      repository: airbyte/worker
+    env_vars:
+      SYNC_JOB_MAX_ATTEMPTS: "2"
+      SYNC_JOB_MAX_TIMEOUT_DAYS: "1"
+      CONTAINER_ORCHESTRATOR_IMAGE: "airbyte/container-orchestrator:0.63.3"
+  workload-launcher:
+    enabled: false
+  workload-api-server:
+    enabled: false

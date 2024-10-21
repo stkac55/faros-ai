@@ -1,0 +1,11 @@
+apiVersion: v2
+appVersion: 0.63.3
+dependencies:
+- alias: airbyte
+  name: airbyte
+  repository: https://airbytehq.github.io/helm-charts
+  version: 0.242.2
+description: Faros Airbyte Helm chart for Kubernetes
+name: airbyte
+type: application
+version: 0.63.3

@@ -1,0 +1,6 @@
+dependencies:
+- name: airbyte
+  repository: https://airbytehq.github.io/helm-charts
+  version: 0.242.2
+digest: sha256:be24b1b24773f3077ed460af8b50c1dd34e9d6e11e9fa05019238a8467d69d59
+generated: "2024-10-18T16:30:22.113943-07:00"
