@@ -1,0 +1,12 @@
+global:
+  faros:
+    environment: "NOT_DEFINED"
+    apiUri: "http://NOT_DEFINED"
+    appUri: "http://NOT_DEFINED"
+    staticTenantID: "NOT_DEFINED"
+  datadog:
+    enabled: false
+    agent:
+      port: 8126
+    statsd:
+      port: 8125

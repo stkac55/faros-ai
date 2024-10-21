@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-aion
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: efs-sc
+  volumeName: efs-aion
+  resources:
+    requests:
+      storage: {{ .Values.efs.aion.volumeSize }}

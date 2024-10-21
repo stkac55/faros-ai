@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: d92b23e
+dependencies:
+- alias: irisDb
+  condition: irisDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros iris service
+name: iris
+type: application
+version: 1.0.8

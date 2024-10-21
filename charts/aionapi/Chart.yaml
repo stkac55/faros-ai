@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 12a8f04
+dependencies:
+- alias: aionServiceDb
+  condition: aionServiceDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros Aion service
+name: aionapi
+type: application
+version: 1.0.8

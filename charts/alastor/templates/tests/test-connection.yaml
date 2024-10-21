@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "alastor.fullname" . }}-test-connection"
+  labels:
+    {{- include "alastor.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: {{ .Values.global.imageRegistry }}/busybox
+      securityContext:
+        {{- toYaml .Values.global.testConnectionSecurityContext | nindent 8 }}
+      command: ['wget']
+      args: ['{{ include "alastor.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

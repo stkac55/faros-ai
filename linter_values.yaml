@@ -1,0 +1,22 @@
+global:
+  extraLabels:
+    test-key1: test-value1
+    test-key2: test-value2
+  faros:
+    environment: "NOT_DEFINED"
+    apiUri: "http://NOT_DEFINED"
+    appUri: "http://NOT_DEFINED"
+    staticTenantID: "NOT_DEFINED"
+  alastor:
+    nextAuthProviders: "NOT_DEFINED"
+    nextPublicFarosStaticLicense: "NOT_DEFINED"
+  aionv2:
+    enabled: true
+  poseidon:
+    googleMapsAPIKey: "NOT_DEFINED"
+  datadog:
+    enabled: true
+    agent:
+      port: 8126
+    statsd:
+      port: 8125

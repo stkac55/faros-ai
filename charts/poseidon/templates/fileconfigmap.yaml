@@ -1,0 +1,10 @@
+{{ if .Values.airbyteConfigs.localZipFileName }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "poseidon.fullname" . }}-files"
+  labels:
+    {{- include "poseidon.labels" . | nindent 4 }}
+binaryData:
+  airbyte-connectors-configs: {{ .Files.Get .Values.airbyteConfigs.localZipFileName | b64enc }}
+{{ end }}

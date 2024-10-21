@@ -1,0 +1,19 @@
+global:
+  ingress:
+    deploymentName: ingress-nginx
+    namespace: ingress-nginx
+  faros:
+    environment: "NOT_DEFINED"
+    apiUri: "http://NOT_DEFINED"
+    appUri: "http://NOT_DEFINED"
+    staticTenantID: "NOT_DEFINED"
+  aion:
+    oasPath: /aion/oas.json
+  poseidon:
+    oasPath: "/oas/oas.yaml"
+  datadog:
+    enabled: false
+    agent:
+      port: 8126
+    statsd:
+      port: 8125

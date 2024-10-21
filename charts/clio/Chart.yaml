@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 36de627
+description: Helm chart for Faros Clio service
+name: clio
+type: application
+version: 1.0.8

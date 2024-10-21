@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aion.fullname" . }}
+  labels:
+    {{- include "aion.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aion.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-v: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secrets-v: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "aion.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "aion.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: AION_REGISTRATION_TENANT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_STATIC_TENANT_ID
+            - name: FAROS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_API_URL
+            - name: FEED_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FEEDS_VERSION
+            - name: METABASE_EXTERNAL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: METABASE_EXTERNAL_URL
+            - name: METABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: METABASE_URL
+            - name: FAROS_STS_JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: STS_JWT_PRIVATE_KEY
+            - name: FAROS_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_ROOT_USER
+            - name: AION_REPORT_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: AION_REPORT_DATABASE_URL
+            - name: AION_REPORT_DATABASE_READ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: AION_REPORT_DATABASE_READ_URL
+            - name: METABASE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: METABASE_DATABASE_URL
+            - name: METABASE_EMBEDDING_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: MB_EMBEDDING_SECRET_KEY
+            - name: UNLEASH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-unleash
+                  key: UNLEASH_URL
+            - name: UNLEASH_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-unleash
+                  key: UNLEASH_API_TOKEN
+            - name: DD_SERVICE
+              value: {{ include "aion.name" . }}
+            {{- include "faros-ai.datadog.baseEnvVars" . | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "aion.fullname" . }}
+            - secretRef:
+                name: {{ include "aion.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /aion/health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /aion/health
+              port: http
+            successThreshold: 1 # Must be 1 for liveness and startup probes per k8s docs
+            failureThreshold: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /aion/health
+              port: http
+            successThreshold: 2
+            failureThreshold: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

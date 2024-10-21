@@ -1,0 +1,107 @@
+# Docker registry name applied to all images, defaults to Docker hub
+imageRegistry: &imageRegistry docker.io
+farosIngressClassName: &farosIngressClassName nginx
+
+global:
+  imageRegistry: *imageRegistry
+  # Extra labels to add to all resources
+  extraLabels: {}
+    # key1: value1
+    # key2: value2
+  ingress:
+    className: *farosIngressClassName
+    scheme: HTTPS
+    alb:
+      # the alb object is required only when ingress clasName is alb
+      port: "443"
+      groupName: "" # group ingresses under this name
+      domainName: "" # private domain name for ALB for internal traffic
+    nginx:
+      # the nginx object is required only when ingress clasName is nginx
+      deploymentName: ingress-nginx
+      namespace: ingress-nginx
+  datadog:
+    # Enable if Datadog is deployed in the cluster. See https://docs.datadoghq.com/containers/kubernetes/#install-the-datadog-agent
+    enabled: false
+    agent:
+      port: 8126
+      otelGrpcPort: "4317"
+      otelHttpPort: "4318"
+    statsd:
+      port: 8125
+    # Provide Datadog apiKey and appKey to enable Dashboard sync metrics which are sent directly to Datadog cloud API
+    # apiKey: ""
+    # appKey: ""
+  faros:
+    environment: "" # used in Datadog tags
+    apiUri: ""
+    appUri: ""
+    rootUser: root-user
+    feedsVersion: "0.34.9"
+    staticTenantID: ""
+    nodeJs:
+      GCLoggingEnabled: false
+  aion:
+    oasPath: /aion/oas.json
+  aionv2:
+    enabled: false
+  airbyte:
+    enabled: false
+    # If enabled is true, overrides default value "http://airbyte-airbyte-webapp-svc.{{ .Release.Namespace }}.svc/api"
+    url: ""
+  alastor:
+    nextAuthProviders: ""
+    nextPublicFarosStaticLicense: ""
+  iris:
+    enabled: false
+  poseidon:
+    oasPath: "/oas/oas.yaml"
+    googleMapsAPIKey: "AIza-dummy-api-key"
+    # To enable vault secrets, set its url and token
+    # vaultUri: "http://vault.vault:8200"
+    # Value of vault token can either be the token itself (starts with "hvs." or "hvb." prefix ) or a path to file where the token is stored
+    # when not using vault, set it to a value that starts with "hvs." prefix
+    # vaultToken: "hvs.not_defined"
+    vaultStoreName: "secret"
+    # Provide custom headers to be sent to vault server as comma separated list of key=value pairs
+    # vaultExtraHeaders: "X-Vault-Namespace=MY-NAMESPACE"
+    # Provide custom key prefix for vault secrets if needed
+    # vaultKeyPrefix: "key/prefix"
+    # For https connections when using self-signed certificates, set this to "false"
+    # vaultValidateCert: "true"
+  metabase:
+    user: admin@faros.ai
+    controlUser: controluser@faros.ai
+    service:
+      ports:
+        postgresql: "5432"
+  testConnectionSecurityContext:
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+ingress:
+  enabled: true
+  className: *farosIngressClassName
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.org/client-max-body-size: "50m"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+

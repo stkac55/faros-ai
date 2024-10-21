@@ -1,0 +1,160 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alastor.fullname" . }}
+  labels:
+    {{- include "alastor.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "alastor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-v: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secrets-v: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "alastor.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "alastor.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            {{- $aionMetabaseConfigmap := "metabase" }}
+            {{- if .Values.global.aionv2.enabled }}
+              {{- $aionMetabaseConfigmap = "aionmetabase" }}
+            {{- end }}
+            - name: FAROS_INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_API_URL
+            - name: METABASE_USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aion
+                  key: METABASE_USER
+            - name: NEXT_PUBLIC_FAROS_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_API_URL
+            - name: NEXT_PUBLIC_FAROS_STATIC_TENANT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_STATIC_TENANT_ID
+            - name: NEXT_PUBLIC_FAROS_ACCOUNT_CODE_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FEEDS_VERSION
+            - name: NEXT_PUBLIC_METABASE_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: METABASE_EXTERNAL_URL
+            - name: NEXT_PUBLIC_METABASE_DUCK_DB_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-{{ $aionMetabaseConfigmap }}
+                  key: METABASE_EXTERNAL_URL
+            - name: METABASE_INTERNAL_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: METABASE_URL
+            - name: METABASE_DUCK_DB_INTERNAL_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-{{ $aionMetabaseConfigmap }}
+                  key: METABASE_URL
+            - name: UNLEASH_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-unleash
+                  key: UNLEASH_API_TOKEN
+            - name: UNLEASH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-unleash
+                  key: UNLEASH_URL
+            - name: FAROS_STATIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_STATIC_API_KEY
+            - name: FAROS_STS_JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: STS_JWT_PRIVATE_KEY
+            - name: METABASE_JWT_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: MB_JWT_SHARED_SECRET
+            - name: METABASE_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aion
+                  key: METABASE_PASSWORD
+            - name: DD_SERVICE
+              value: {{ include "alastor.name" . }}
+            {{- include "faros-ai.datadog.baseEnvVars" . | nindent 12 }}
+          envFrom:
+          - secretRef:
+              name: {{ include "alastor.fullname" . }}
+          - configMapRef:
+              name: {{ include "alastor.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          {{- $healthCheckUri := print .Values.basePath "/healthz" }}
+          startupProbe:
+            httpGet:
+              path: {{ $healthCheckUri }}
+              port: http
+            failureThreshold: 10
+            periodSeconds: 10
+          livenessProbe:
+            periodSeconds: 10
+            failureThreshold: 3
+            httpGet:
+              path: {{ $healthCheckUri }}
+              port: http
+          readinessProbe:
+            httpGet:
+              path: {{ $healthCheckUri }}
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

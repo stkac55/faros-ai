@@ -1,0 +1,80 @@
+# To enable external DB for a given service, set internal DB's enabled: false and
+# provide values for external DB host, port, db name, user and password
+# then when calling helm install, provide this file on command line as "-f <path-to-file>/values-external-dbs.yaml"
+aion:
+  aionDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+hasura:
+  hasuraDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+hermes:
+  hermesDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+iris:
+  irisDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+metabase:
+  metabaseDb:
+    enabled: true
+  externalMetabaseDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+  metricsDb:
+    enabled: true
+  externalMetricsDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+  externalMetricsReadReplicaDb:
+    enabled: true
+    host:
+    port: 5432
+poseidon:
+  poseidonDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+unleash:
+  unleashDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    superusername:
+    superuserpassword:

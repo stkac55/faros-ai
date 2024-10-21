@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aionworker.fullname" . }}
+  labels:
+    {{- include "aionworker.labels" . | nindent 4 }}
+data:
+  AION_RELEASE_BUCKET: {{ .Values.releaseBucket | quote }}
+  AION_RELEASE_REGISTRY: {{ .Values.releaseRegistry | quote }}
+  AION_RELEASE_VERSION_FILE: {{ .Values.releaseVersionFile | quote }}
+  AION_REGISTER_LATEST_RELEASE: {{ .Values.registerLatestRelease | quote }}
+  AION_RETAINED_TENANTS: {{ .Values.retainedTenants | quote}}
+  LOG_LEVEL: {{ .Values.logLevel | quote }}
+  TEMPORAL_ADDRESS: "{{ .Values.global.temporal.host }}:{{ .Values.global.temporal.port }}"
+  {{- if .Values.global.temporal.tls }}
+  TEMPORAL_TLS: {{ .Values.global.temporal.tls | quote }}
+  {{- end }}
+  {{- if .Values.global.temporal.tls }}
+  TEMPORAL_TLS_SERVER_NAME: {{ .Values.global.temporal.host | quote }}
+  {{- end }}

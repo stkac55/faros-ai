@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "poseidon.fullname" . }}
+  labels:
+    {{- include "poseidon.labels" . | nindent 4 }}
+data:
+  ROOT_LOG_LEVEL: "{{ .Values.rootLogLevel }}"
+{{- $internalApiUrl := printf "http://%s-controller.%s.svc" .Values.global.ingress.nginx.deploymentName .Values.global.ingress.nginx.namespace }}
+{{- if eq .Values.global.ingress.className "alb" }}
+  {{- $internalApiUrl = printf "%s://%s" (lower .Values.global.ingress.scheme) .Values.global.ingress.alb.domainName }}
+{{- end }}
+  FAROS_API_URL:  "{{ $internalApiUrl }}"
+  FAROS_INTERNAL_API_URL: "{{ $internalApiUrl }}"
+  FEEDS_VERSION: {{ required "global.faros.feedsVersion value is empty or not defined" .Values.global.faros.feedsVersion | quote }}
+  FAROS_STATIC_TENANT_ID: {{ required "global.faros.staticTenantID value is empty or not defined" .Values.global.faros.staticTenantID }}
+  DD_AGENT_ENABLED: "false"
+  LOG_SERVER_REQUEST_RESPONSE: "true"
+{{ if .Values.airbyteConfigs.dockerRepo }}
+  AIRBYTE_CONNECTOR_SETTINGS_DOCKER_REPO: {{ .Values.airbyteConfigs.dockerRepo | quote }}
+{{ end }}
+{{ if .Values.global.airbyte.enabled }}
+  {{ if .Values.global.airbyte.url }}
+  AIRBYTE_URL: {{ .Values.global.airbyte.url }}
+  {{ else }}
+  AIRBYTE_URL: "http://airbyte-airbyte-webapp-svc.{{ .Release.Namespace }}.svc/api"
+  {{ end }}
+  AIRBYTE_USERNAME: {{ .Values.airbyteConfigs.username | quote }}
+{{ else }}
+  AIRBYTE_URL: "http://NOT_DEFINED"
+{{ end }}
+{{ if .Values.localSyncLogsBucket }}
+  LOCAL_SYNC_LOGS_BUCKET: {{ .Values.localSyncLogsBucket }}
+{{ end }}
+  FAROS_AUTH_URL: "http://{{ include "poseidon.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/users/auth"
+  API_DOC_ENDPOINTS_TO_HIDE: "/executables"
+  API_ENDPOINTS_TO_HIDE: "/apps,/schedules"
+{{ if .Values.global.poseidon.vaultStoreName }}
+  SECRETS_VAULT_STORE_NAME: {{ .Values.global.poseidon.vaultStoreName | quote }}
+{{ end }}
+{{ if .Values.global.poseidon.vaultKeyPrefix }}
+  SECRETS_VAULT_KEY_PREFIX: {{ .Values.global.poseidon.vaultKeyPrefix | quote }}
+{{ end }}
+  SECRETS_VAULT_VALIDATE_CERT: {{ .Values.global.poseidon.vaultValidateCert | quote }}
+  LAMBDA_AWS_REGION: {{ .Values.global.faros.awsRegion | quote }}
+  SECRETS_AWS_REGION: {{ .Values.global.faros.awsRegion | quote }}

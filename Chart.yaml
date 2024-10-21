@@ -1,0 +1,47 @@
+apiVersion: v2
+appVersion: 1.0.8
+dependencies:
+- name: aion
+  repository: ""
+  version: 1.0.8
+- condition: global.aionv2.enabled
+  name: aionapi
+  repository: ""
+  version: 1.0.8
+- condition: global.aionv2.enabled
+  name: aionmetabase
+  repository: ""
+  version: 1.0.8
+- condition: global.aionv2.enabled
+  name: aionworker
+  repository: ""
+  version: 1.0.8
+- name: alastor
+  repository: ""
+  version: 1.0.8
+- name: clio
+  repository: ""
+  version: 1.0.8
+- name: hasura
+  repository: ""
+  version: 1.0.8
+- name: hermes
+  repository: ""
+  version: 1.0.8
+- condition: global.iris.enabled
+  name: iris
+  repository: ""
+  version: 1.0.8
+- name: metabase
+  repository: ""
+  version: 1.0.8
+- name: poseidon
+  repository: ""
+  version: 1.0.8
+- name: unleash
+  repository: ""
+  version: 1.0.8
+description: Faros.ai deployment for Kubernetes
+name: faros-ai
+type: application
+version: 1.0.8

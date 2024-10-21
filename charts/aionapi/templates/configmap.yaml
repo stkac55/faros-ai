@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aionapi.fullname" . }}
+  labels:
+    {{- include "aionapi.labels" . | nindent 4 }}
+data:
+  TEMPORAL_ADDRESS: "{{ .Values.global.temporal.host }}:{{ .Values.global.temporal.port }}"
+  {{- if .Values.global.temporal.tls }}
+  TEMPORAL_TLS: {{ .Values.global.temporal.tls | quote }}
+  {{- end }}
+  {{- if .Values.global.temporal.tls }}
+  TEMPORAL_TLS_SERVER_NAME: {{ .Values.global.temporal.host | quote }}
+  {{- end }}

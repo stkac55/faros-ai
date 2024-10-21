@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "iris.fullname" . }}
+  labels:
+    {{- include "iris.labels" . | nindent 4 }}
+data:
+  IRIS_PORT: {{ .Values.service.targetPort | quote }}
+  FAROS_NODE_OPTIONS: {{ include "iris.farosNodeOptions" . | quote }}

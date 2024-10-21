@@ -1,0 +1,92 @@
+global:
+  faros:
+    environment: "NOT_DEFINED"
+    apiUri: "http://NOT_DEFINED"
+    appUri: "http://NOT_DEFINED"
+    staticTenantID: "NOT_DEFINED"
+  alastor:
+    nextAuthProviders: "NOT_DEFINED"
+    nextPublicFarosStaticLicense: "NOT_DEFINED"
+  poseidon:
+    googleMapsAPIKey: "NOT_DEFINED"
+    vaultToken: "NOT_DEFINED"
+  datadog:
+    enabled: true
+    agent:
+      port: 8126
+    statsd:
+      port: 8125
+
+aion:
+  aionDb:
+    enabled: false
+  externalDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+hasura:
+  hasuraDb:
+    enabled: false
+  externalDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+hermes:
+  hermesDb:
+    enabled: false
+  externalDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+iris:
+  irisDb:
+    enabled: false
+  externalDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+metabase:
+  metabaseDb:
+    enabled: false
+  externalMetabaseDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+  metricsDb:
+    enabled: false
+  externalMetricsDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+poseidon:
+  poseidonDb:
+    enabled: false
+  externalDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+unleash:
+  unleashDb:
+    enabled: false
+  externalDb:
+    host: "NOT_DEFINED"
+    port: 5432
+    database: "NOT_DEFINED"
+    username: "NOT_DEFINED"
+    password: "NOT_DEFINED"
+    superusername: "NOT_DEFINED"
+    superuserpassword: "NOT_DEFINED"
