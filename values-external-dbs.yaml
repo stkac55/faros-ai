@@ -1,0 +1,122 @@
+# To enable external DB for a given service, set internal DB's enabled: false and
+# provide values for external DB host, port, db name, user and password
+# then when calling helm install, provide this file on command line as "-f <path-to-file>/values-external-dbs.yaml"
+aion:
+  aionDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    # To provide password from an existing Kubernetes secret, set the following values
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+hasura:
+  hasuraDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    # To provide password from an existing Kubernetes secret, set the following values
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+hermes:
+  hermesDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    # To provide password from an existing Kubernetes secret, set the following values
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+iris:
+  irisDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    # To provide password from an existing Kubernetes secret, set the following values
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+metabase:
+  metabaseDb:
+    enabled: true
+  externalMetabaseDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+  metricsDb:
+    enabled: true
+  externalMetricsDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+  externalMetricsReadReplicaDb:
+    enabled: true
+    host:
+    port: 5432
+poseidon:
+  poseidonDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    # To provide password from an existing Kubernetes secret, set the following values
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+unleash:
+  unleashDb:
+    enabled: true
+  externalDb:
+    host:
+    port: 5432
+    database:
+    username:
+    password:
+    # To provide password from an existing Kubernetes secret, set the following values
+    passwordSecret:
+      namespace: ""
+      name: ""
+      key: ""
+    superusername:
+    superuserpassword:
+    superUserPasswordSecret:
+      namespace: ""
+      name: ""
+      key: ""

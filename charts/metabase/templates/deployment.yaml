@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metabase.fullname" . }}
+  labels:
+    {{- include "metabase.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "metabase.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-v: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secrets-v: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "metabase.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "metabase.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: MAX_SESSION_AGE
+              value: "4320"
+            - name: MB_ANON_TRACKING_ENABLED
+              value: "false"
+            - name: MB_APPLICATION_COLORS
+              value: "{\"brand\":\"#114F73\", \"filter\":\"#0EC5ED\", \"summarize\":\"#E9560D\",\"accent1\":\"#70B3C3\",\"accent2\":\"#F2C26D\",\"accent3\":\"#E2678B\",\"accent4\":\"#B2D498\",\"accent5\":\"#B583B8\",\"accent6\":\"#F18579\",\"accent7\":\"#4E94A4\",\"accent8\":\"#E8AE4C\",\"accent9\":\"#C94265\",\"accent10\":\"#99C183\",\"accent11\":\"#985C97\",\"accent12\":\"#E66556\",\"accent13\":\"#297686\",\"accent14\":\"#DC9B27\",\"accent15\":\"#AE1241\",\"accent16\":\"#81AF6E\",\"accent17\":\"#7B3677\",\"accent18\":\"#D84234\"}"
+            - name: MB_APPLICATION_DB_MAX_CONNECTION_POOL_SIZE
+              value: "50"
+            - name: MB_APPLICATION_FONT
+              value: "Lato"
+            - name: MB_APPLICATION_LOGO_URL
+              value: "{{ .Values.global.faros.appUri}}/white-1x1.png"
+            - name: MB_APPLICATION_NAME
+              value: "Faros"
+            - name: MB_COLORIZE_LOGS
+              value: "false"
+            - name: MB_CONTAINER_PORT
+              value: {{ .Values.service.targetPort | quote }}
+            - name: MB_EMOJI_IN_LOGS
+              value: "false"
+            - name: MB_CHECK_FOR_UPDATES
+              value: "false"
+            - name: MB_DB_TYPE
+              value: "postgres"
+            - name: MB_JETTY_PORT
+              value: {{ .Values.jettyPort | quote }}
+            - name: MB_SEND_EMAIL_ON_FIRST_LOGIN_FROM_NEW_DEVICE
+              value: "false"
+            - name: MB_ENABLE_EMBEDDING
+              value: "true"
+            - name: MB_EMBEDDING_APP_ORIGIN
+              value: {{ (split ":" (urlParse .Values.global.faros.appUri).host)._0 }}
+            - name: MB_HUMANIZATION_STRATEGY
+              value: "simple"
+            - name: MB_JDBC_DATA_WAREHOUSE_MAX_CONNECTION_POOL_SIZE
+              value: "50"
+            - name: MB_JETTY_MAXTHREADS
+              value: "500"
+            - name: MB_JWT_ENABLED
+              value: "true"
+            - name: MB_JWT_GROUP_SYNC
+              value: "true"
+            - name: MB_ENABLE_XRAYS
+              value: "false"
+            - name: MB_LOADING_MESSAGE
+              value: "Loading…"
+            - name: MB_ENABLE_QUERY_CACHING
+              value: "true"
+            - name: MB_QUERY_CACHING_MAX_TTL
+              value: "28800"
+            - name: MB_QUERY_CACHING_MIN_TTL
+              value: "4"
+            - name: MB_QUERY_CACHING_TTL_RATIO
+              value: "120"
+            - name: JAVA_OPTS
+              value: {{ .Values.javaOpts | quote }}
+            - name: JAVA_TIMEZONE
+              value: "GMT"
+            - name: LOG_LEVEL
+              value: "INFO"
+            - name: DD_SERVICE
+              value: {{ include "metabase.name" . }}
+            {{- include "faros-ai.datadog.baseEnvVars" . | nindent 12 }}
+          envFrom:
+          - configMapRef:
+              name: {{ include "metabase.fullname" . }}
+          - secretRef:
+              name: {{ include "metabase.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            failureThreshold: 6
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "poseidon.fullname" . }}
+  labels:
+    {{- include "poseidon.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "poseidon.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-v: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secrets-v: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "poseidon.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "poseidon.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: ADDRESS
+              value: "0.0.0.0"
+            - name: AIRBYTE_MAX_MEMORY_SIZE_IN_MBS
+              value: "1024"
+            - name: AIRBYTE_MEMORY_SIZE_IN_MBS
+              value: "128"
+            - name: API_EXECUTION_PARALLELISM
+              value: "128"
+            - name: APPS_S3_BUCKET
+              value: NOT_DEFINED
+            - name: DATABASE_NUM_OF_THREADS
+              value: "128"
+            - name: DYNAMIC_SCOPES_CACHE_TTL
+              value: "5 minutes"
+            - name: EXECUTABLES_S3_BUCKET
+              value: NOT_DEFINED
+            - name: FEEDS_INVOCATION_LOGS_S3_BUCKET
+              value: NOT_DEFINED
+            - name: FEEDS_LOG_SHIPPER_ARN
+              value: NOT_DEFINED
+            - name: FEEDS_RELEASES_S3_BUCKET
+              value: NOT_DEFINED
+            - name: FEEDS_RELEASES_S3_BUCKET_REGION
+              value: NOT_DEFINED
+            - name: FEEDS_VPC_ACCESS_DEFAULT
+              value: "true"
+            - name: JAVA_OPTS
+              value: "-XX:MaxRAMPercentage=80.0 -Xlog:gc:stdout:time -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 -DROOT_LOG_LEVEL={{ .Values.rootLogLevel }}"
+            - name: LAMBDA_AWS_ACCOUNT_ID
+              value: NOT_DEFINED
+            - name: LAMBDA_FUNCTION_NAME_PREFIX
+              value: faros
+            - name: LAMBDA_QUEUE_RETENTION_TIMEOUT_IN_SECS
+              value: "3600"
+            - name: LAMBDA_QUEUE_VISIBILITY_TIMEOUT_IN_SECS
+              value: "1350"
+            - name: LAMBDA_ROLE_ARN
+              value: NOT_DEFINED
+            - name: LAMBDA_SECURITY_GROUP_IDS
+              value: NOT_DEFINED
+            - name: LAMBDA_SUBNET_IDS
+              value: NOT_DEFINED
+            - name: METRICS_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: FAROS_METRICS_READ_DB_HOST
+            - name: METRICS_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: FAROS_METRICS_READ_DB_PORT
+            - name: METRICS_DB_DBNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: FAROS_METRICS_DBNAME
+            - name: PORT
+              value: {{ .Values.service.targetPort | quote }}
+            - name: STUNNEL_ENABLED
+              value: "false"
+            - name: STUNNEL_LOGLEVEL
+              value: err
+            - name: DD_SERVICE
+              value: {{ include "poseidon.name" . }}
+            {{- include "faros-ai.datadog.baseEnvVars" . | nindent 12 }}
+            # vars with sensitive content are imported from secrets manifest with envFrom
+          envFrom:
+          - secretRef:
+              name: {{ include "poseidon.fullname" . }}
+          - configMapRef:
+              name: {{ include "poseidon.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 6
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+{{ if .Values.airbyteConfigs.localZipFileName }}
+          volumeMounts:
+            - name: airbyte-connectors-configs
+              mountPath: {{ .Values.airbyteConfigs.mountPath }}
+      volumes:
+        - name: airbyte-connectors-configs
+          configMap:
+            name: "{{ include "poseidon.fullname" . }}-files"
+            items:
+              - key: airbyte-connectors-configs
+                path: {{ .Values.airbyteConfigs.mountFileName }}
+{{ end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

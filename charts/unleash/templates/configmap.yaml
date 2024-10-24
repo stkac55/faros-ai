@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "unleash.fullname" . }}
+  labels:
+    {{- include "unleash.labels" . | nindent 4 }}
+data:
+  UNLEASH_BASE_URI_PATH: {{ .Values.baseUriPath }}
+  UNLEASH_URL: "http://{{ include "unleash.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}{{ .Values.baseUriPath }}/api"
+  UNLEASH_PORT: {{ .Values.service.targetPort | quote }}
+  LOG_LEVEL: "debug"
+  FAROS_NODE_OPTIONS: {{ include "faros-ai.farosNodeOptions" . | quote }}
+  {{- $dbHost := .Values.externalDb.host }}
+  {{- $dbPort := .Values.externalDb.port }}
+  {{- $dbName := .Values.externalDb.database }}
+  {{- $dbUseSSL := .Values.externalDb.useSSL }}
+  {{- $dbVerifySSL := .Values.externalDb.verifySSL }}
+  {{- if .Values.unleashDb.enabled }}
+    {{- $dbHost = printf "%s-%s.%s.svc" .Release.Name .Values.dbName .Release.Namespace }}
+    {{- $dbPort = .Values.global.postgresql.service.ports.postgresql }}
+    {{- $dbName = .Values.unleashDb.auth.database }}
+    {{- $dbUseSSL = "false" }}
+    {{- $dbVerifySSL = "false" }}
+  {{- end }}
+  UNLEASH_DATABASE_HOST: {{ required "UNLEASH_DATABASE_HOST is empty or not defined" $dbHost | quote }}
+  UNLEASH_DATABASE_PORT: {{ required "UNLEASH_DATABASE_PORT is empty or not defined" $dbPort | quote }}
+  UNLEASH_DATABASE_NAME: {{ required "UNLEASH_DATABASE_NAME is empty or not defined" $dbName | quote }}
+  UNLEASH_DATABASE_USE_SSL: {{ $dbUseSSL | quote }}
+  UNLEASH_DATABASE_VERIFY_SSL: {{ $dbVerifySSL | quote }}

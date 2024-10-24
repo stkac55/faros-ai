@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 1d79501
+dependencies:
+- alias: poseidonDb
+  condition: poseidonDb.enabled
+  name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.2.2
+description: Helm chart for Faros Poseidon service
+name: poseidon
+type: application
+version: 1.0.9

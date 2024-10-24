@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metabase.fullname" . }}
+  labels:
+    {{- include "metabase.labels" . | nindent 4 }}
+data:
+  {{- $farosApiUri := .Values.global.faros.apiUri }}
+  {{- $mbBasePath := "metabase" }}
+  METABASE_URL: "http://{{ include "metabase.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/{{ $mbBasePath }}"
+
+  METABASE_EXTERNAL_URL: "{{ $farosApiUri }}/{{ $mbBasePath }}"
+  MB_SITE_URL: "{{ $farosApiUri }}/{{ $mbBasePath }}/"
+  FAROS_API_URI: "{{ $farosApiUri }}"
+  MB_JWT_IDENTITY_PROVIDER_URI: "{{ $farosApiUri }}/api/auth/metabase"
+  DD_AGENT_ENABLED: "false"

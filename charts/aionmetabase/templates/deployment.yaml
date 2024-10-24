@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aionmetabase.fullname" . }}
+  labels:
+    {{- include "aionmetabase.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aionmetabase.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-v: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        secrets-v: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "aionmetabase.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "aionmetabase.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          volumeMounts:
+            - name: efs-metabase
+              mountPath: /metabase
+              readOnly: true
+          env:
+            - name: LOG_LEVEL
+              value: "INFO"
+            {{- include "aionv2.datadog.baseEnvVars" . | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "aionmetabase.fullname" . }}
+            - secretRef:
+                name: {{ include "aionmetabase.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.jettyPort }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            failureThreshold: 6
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: nginx
+          env:
+            - name: NGINX_CONFIG_B64
+              value: {{ tpl (.Files.Get "nginx.conf") . | b64enc }}
+          securityContext:
+            {{- toYaml .Values.nginxSecurityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.nginxImage.repository }}:{{ .Values.nginxImage.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: nginx
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: nginx
+            failureThreshold: 6
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: nginx
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: nginx
+          resources:
+            {{- toYaml .Values.nginxResources | nindent 12 }}
+      volumes:
+        - name: efs-metabase
+          persistentVolumeClaim:
+            claimName: efs-metabase
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aionworker.fullname" . }}
+  labels:
+    {{- include "aionworker.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aionworker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        configmap-v: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "aionworker.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "aionworker.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: FAROS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: FAROS_API_URL
+            - name: METABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-aionmetabase
+                  key: METABASE_URL
+            - name: AION_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aionapi
+                  key: AION_DATABASE_URL
+            - name: AION_REPORTS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: AION_REPORT_DATABASE_URL
+            - name: LEGACY_METABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-metabase
+                  key: METABASE_URL
+            - name: LEGACY_METABASE_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aion
+                  key: METABASE_USER
+            - name: LEGACY_METABASE_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aion
+                  key: METABASE_PASSWORD
+            - name: METABASE_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aionapi
+                  key: METABASE_ADMIN_USERNAME
+            - name: METABASE_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aionapi
+                  key: METABASE_ADMIN_PASSWORD
+            - name: METABASE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aionmetabase
+                  key: MB_API_KEY
+            - name: METABASE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-aionmetabase
+                  key: MB_JWT_SHARED_SECRET
+            - name: FAROS_STS_JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-poseidon
+                  key: STS_JWT_PRIVATE_KEY
+            {{- include "aionworker.datadog.baseEnvVars" . | nindent 12 }}
+          envFrom:
+          - configMapRef:
+              name: {{ include "aionworker.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 20
+            periodSeconds: 30
+          livenessProbe:
+            tcpSocket:
+              port: http
+            successThreshold: 1 # Must be 1 for liveness and startup probes per k8s docs
+            failureThreshold: 5
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: http
+            successThreshold: 2
+            failureThreshold: 5
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: efs-aion
+              mountPath: /aion
+            - name: efs-metabase
+              mountPath: /metabase
+      volumes:
+        - name: efs-aion
+          persistentVolumeClaim:
+            claimName: efs-aion
+        - name: efs-metabase
+          persistentVolumeClaim:
+            claimName: efs-metabase
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
